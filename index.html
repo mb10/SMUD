@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Solar prices in Sacramento</title>
+    <style>
+
+    body {
+      font: 10px sans-serif;
+    }
+
+    .axis path,
+    .axis line {
+      fill: none;
+      stroke: #000;
+      shape-rendering: crispEdges;
+    }
+
+    .x.axis path {
+
+    }
+
+    .line {
+      fill: none;
+      stroke: steelblue;
+      stroke-width: 1.5px;
+    }
+
+    .line2 {
+      fill: none;
+      stroke: green;
+      stroke-width: 1.5px;
+    }
+
+    .label {
+      font-size: 2em;
+    }
+
+    text {
+      font-size: 1.3em;
+    }
+
+    </style>
+</head>
+<body>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script type="text/javascript">
+
+    var margin = {top:50, right:100, bottom:70, left:70},
+        width  = 900,
+        height = 600;
+
+    var parseDate = d3.time.format("%Y/%m").parse;
+
+    var x = d3.time.scale()
+        .range([0, width]);
+
+    var y = d3.scale.linear()
+        .range([height, 0]);
+
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom");
+
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left")
+        .tickFormat(function(d) {return "$" + d/1000; });
+
+    var line = d3.svg.line()
+        .x(function(d) { return x(d["date"]); })
+        .defined(function(d) { return d["from5to10"] != 0; })
+        .y(function(d) { return y(d["from5to10"]); })
+        .interpolate("basis");
+
+    var line2 = d3.svg.line()
+        .x(function(d) { return x(d["date"]); })
+        .defined(function(d) { return d["from2to5"] != 0; })
+        .y(function(d) { return y(d["from2to5"]); })
+        .interpolate("basis");
+
+
+    var svg = d3.select("body").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    d3.csv("SMUDclean.csv", function(error, data) {
+
+      sizes = ["less2", "from2to5", "from5to10", "morethan10"]
+
+      data.forEach(function(d) {
+
+          d["date"] = parseDate(d["date"]);
+          
+          for (size in sizes) {
+            console.log(size)
+            d[sizes[size]] = +d[sizes[size]];
+          };
+        });
+
+        console.log(data);
+
+      x.domain(d3.extent(data, function(d) { return d["date"]; }));
+      y.domain([2000,10000]);
+
+        svg.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(xAxis);
+
+        svg.append("g")
+            .attr("class", "y axis")
+            .call(yAxis)
+            .append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 6)
+            .attr("dy", ".71em")
+            .style("text-anchor", "end")
+            .text("Price");
+
+        from5to10 = svg.append("path")
+          .datum(data)
+          .attr("class", "lines line")
+          .attr("d", line);
+
+        svg.append("path")
+          .datum(data)
+          .attr("class", "lines line2")
+          .attr("d", line2);
+
+        svg.append("text")
+          .attr("class", "label")
+          .attr("transform", "translate(100,0)")
+          .text("Average residential PV system prices per Watt in Sacramento Municipal Utility District")
+
+        svg.append("text")
+          .attr("dy", ".35em")
+          .attr("text-anchor", "start")
+          .attr("x", width + 5)
+          .attr("y", y(data[data.length-1]["from5to10"]))
+          .style("fill", "black")
+          .text("5-10kW systems");
+
+        svg.append("text")
+          .attr("dy", ".35em")
+          .attr("text-anchor", "start")
+          .attr("x", width + 5)
+          .attr("y", y(data[data.length-1]["from2to5"]))
+          .style("fill", "black")
+          .text("2-5kW systems");
+
+
+    });
+
+
+    </script>
+</body>
+</html>
